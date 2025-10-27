@@ -1,0 +1,78 @@
+# Avaliação Básica
+------------------------------------------------------------------------------
+Loss no Teste: 0.33358708024024963
+Acurácia no Teste: 0.8766025900840759
+Precisão no Teste: 0.842450737953186
+Recall no Teste: 0.9871794581413269
+20/20 ━━━━━━━━━━━━━━━━━━━━ 12s 564ms/step
+
+
+# Relatório de Classificação
+------------------------------------------------------------------------------
+
+Relatório de Classificação:
+              precision    recall  f1-score   support
+
+      NORMAL       0.97      0.69      0.81       234
+   PNEUMONIA       0.84      0.99      0.91       390
+
+    accuracy                           0.88       624
+   macro avg       0.91      0.84      0.86       624
+weighted avg       0.89      0.88      0.87       624
+
+
+# Matriz de Confusão
+------------------------------------------------------------------------------
+
+[[162  72]
+ [  5 385]]
+
+
+# Avaliação Final
+------------------------------------------------------------------------------
+
+O modelo consegue detectar relativamente bem quem TEM pneumonia, mas é ruim em identificar quem NÃO TEM.
+
+Considerando o uso em um sistema de triagem, por exemplo, os casos com pneumonia não passariam desapercebidos, mas o volume de falsos positivos pode ser alarmente.
+
+
+
+## Analisando as métricas
+
+### Matriz de confusão
+
+- Verdadeiros Negativos: 162
+    - O modelo acertou ao marcar o paciente como "NORMAL"
+
+- Falsos Positivos: 72
+    - O modelo marcou erroneamente como "PNEUMONIA", mas o paciente estava "NORMAL" (um alarme falso)
+
+- Falsos Negativos: 5
+    - O modelo marcou como "NORMAL", mas o paciente tinha "PNEUMONIA". (Um erro, o pior cenário possível)
+
+- Verdadeiros Positivos: 385
+    - O modelo acertou ao marcar o paciente com "PNEUMONIA".
+
+### Analisando cada classe
+
+1. Classe PNEUMONIA (Classe Positiva)
+
+- Recall: 0.99 (ou 98.7%) - EXCELENTE
+    - Dos pacientes com pneumonia (390), o modelo identificou corretamente 99% deles.
+- Precision: 0.84 - BOM
+    - De todas as vezes que o modelo disse "PNEUMONIA", ele estava certo em 84% dos casos. Os outros 16% eram alarmes falsos.
+
+2. Classe NORMAL (Classe Negativa)
+
+- Recall: 0.69 - RUIM
+    - Dos pacientes saudáveis (234), o modelo só conseguiu identificar corretamente 69% deles. Os outros 31% foram classificados erroneamente com pneumonia. Talvez este seja o maior ponto de atenção para o modelo.
+
+- Precision: 0.97 - EXCELENTE
+    -  De todas as vezes que o modelo disse "NORMAL", ele estava certo em 97% dos casos.
+
+
+## Diagnóstico
+
+O modelo está enviesado para prever "PNEUMONIA", o que é parte previsível, considerando que o dataset possui um número maior de imagens com PNEUMONIA.
+
+Interessante observarmos também que a acurácia geral de 88%, é enganosa. Ela parece alta, mas esconde o fato de que o modelo está acertando muito em uma classe e errando muito em outra.
