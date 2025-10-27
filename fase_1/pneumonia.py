@@ -13,9 +13,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-train_dir = "xray/train"
-val_dir = "xray/val"
-test_dir = "xray/test"
+train_dir = "../xray/train"
+val_dir = "../xray/val"
+test_dir = "../xray/test"
 
 IMG_SIZE = (150, 150)
 BATCH_SIZE = 32
