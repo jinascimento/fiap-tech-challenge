@@ -156,16 +156,13 @@ Este modelo pode ser utilizado para:
 
 - **Projeto**: Classificação de Pacientes com Diabetes
 - **Versão**: 1.0
-- **Data**: 2024
+- **Data**: 2025
+- **Autores**
+    - Rodrigo de Souza Braga (RM 368177)
+    - Jhonatan izaias do nascimento (RM 366840)
+    - Fabiano Miranda Pereira (RM 367756)
 
-## 📄 Licença
+## Atividade Extra (Visão Computacional)
 
-Este projeto é destinado para fins educacionais e de pesquisa.
+No arquivo [pneumonia](pneumonia.py) fizemos uma implementação para esta atividade, e os resultados podem ser vistos no arquivo [pneumonia.txt](pneumonia.txt)
 
-## 🤝 Contribuições
-
-Contribuições são bem-vindas! Por favor, abra uma issue ou pull request para sugerir melhorias.
-
-## 📞 Contato
-
-Para dúvidas ou sugestões sobre o projeto, entre em contato através dos canais apropriados.
