@@ -42,6 +42,29 @@ def load_dataset():
 
     return pd.read_csv(dataset_path)
 
+
+def train_mlp(df_processed, mlp_params, test_size=0.2, random_state=42):
+    X = df_processed.drop('diabetes', axis=1)
+    y = df_processed['diabetes']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state,
+                                                        stratify=y)
+
+    numeric_cols = ['bmi', 'HbA1c_level', 'blood_glucose_level']
+    scaler = StandardScaler()
+
+    X_train[numeric_cols] = scaler.fit_transform(X_train[numeric_cols])
+
+    X_test[numeric_cols] = scaler.transform(X_test[numeric_cols])
+
+    mlp_model = MLPClassifier(
+        **mlp_params,
+        max_iter=500,
+        random_state=random_state,
+    )
+
+    mlp_model.fit(X_train, y_train)
+    return mlp_model, X_test, y_test
+
 def build_mlp_baseline(df_processed):
     X = df_processed.drop('diabetes', axis=1)
     y = df_processed['diabetes']
