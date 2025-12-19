@@ -13,41 +13,94 @@ def run_ga(config):
     df_processed = prepare_dataset(df)
 
     population = generate_population(config["population_size"])
-    population_with_fitness = []
 
-    for individual in population:
-        # Conversão cromossomo → MLP
-        hidden_layer_sizes = tuple([individual["n_neurons"]] * individual["n_hidden_layers"])
+    best_fitness_global = float("-inf")
+    best_individual_global = None
+    fitness_history = []
 
-        model, X_val, y_val = train_mlp(df_processed,
-            {
-                "hidden_layer_sizes": hidden_layer_sizes,
-                "activation": individual["activation"],
-                "learning_rate_init": individual["learning_rate_init"],
-            }
+    for generation in range(config["generations"]):
+        population_with_fitness = []
+
+        # =========================
+        # Avaliação da população
+        # =========================
+        for individual in population:
+            hidden_layer_sizes = tuple(
+                [individual["n_neurons"]] * individual["n_hidden_layers"]
+            )
+
+            model, X_val, y_val = train_mlp(
+                df_processed,
+                {
+                    "hidden_layer_sizes": hidden_layer_sizes,
+                    "activation": individual["activation"],
+                    "learning_rate_init": individual["learning_rate_init"],
+                },
+            )
+
+            fitness = calculate_fitness(model, X_val, y_val)
+            population_with_fitness.append((individual, fitness))
+
+        # =========================
+        # Métricas da geração
+        # =========================
+        best_fitness_generation = max(f for _, f in population_with_fitness)
+        fitness_history.append(best_fitness_generation)
+
+        for individual, fitness in population_with_fitness:
+            if fitness > best_fitness_global:
+                best_fitness_global = fitness
+                best_individual_global = individual
+
+        # =========================
+        # Seleção
+        # =========================
+        elites, selected_population = apply_selection(
+            population_with_fitness,
+            config["population_size"],
+            config["elite_size"],
+            config["tournament_size"],
         )
 
-        fitness = calculate_fitness(model, X_val, y_val)
-        population_with_fitness.append((individual, fitness))
+        # =========================
+        # Crossover + Mutação
+        # =========================
+        offspring_size = config["population_size"] - config["elite_size"]
 
-    elites, selected_population = apply_selection(population_with_fitness, config["population_size"], config["elite_size"], config["tournament_size"])
-    offspring = apply_crossover(selected_population, config["population_size"], config["crossover_rate"])
-    offspring = apply_mutation(offspring, config["mutation_rate"])
+        offspring = apply_crossover(
+            selected_population,
+            offspring_size,
+            config["crossover_rate"],
+        )
 
-    new_population = elites + offspring
+        offspring = apply_mutation(
+            offspring,
+            config["mutation_rate"],
+        )
 
-    print("\n=== Nova população ===")
-    for ind in new_population:
-        print(ind)
+        # =========================
+        # Nova geração
+        # =========================
+        population = elites + offspring
+
+    return {
+        "best_fitness": best_fitness_global,
+        "best_individual": best_individual_global,
+        "fitness_history": fitness_history,
+    }
+
 
 if __name__ == "__main__":
     config = {
         "population_size": 5,
+        "generations": 10,
         "elite_size": 1,
         "tournament_size": 2,
         "crossover_rate": 0.8,
         "mutation_rate": 0.1,
-        "random_seed": 42
+        "random_seed": 42,
     }
 
-    run_ga(config)
+    result = run_ga(config)
+    print("\nResultado final:")
+    print(result)
