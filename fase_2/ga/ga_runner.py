@@ -1,6 +1,7 @@
 from utils.module_diabetes import load_dataset, prepare_dataset, train_mlp
 
 from fase_2.ga.generate_population import generate_population
+from fase_2.ga.config import HYPERPARAM_SPACE
 from fase_2.ga.fitness import calculate_fitness
 from fase_2.ga.selection import apply_selection
 from fase_2.ga.crossover import apply_crossover
@@ -12,7 +13,7 @@ def run_ga(config):
     df = load_dataset()
     df_processed = prepare_dataset(df)
 
-    population = generate_population(config["population_size"])
+    population = generate_population(config["population_size"], config["hyperparam_space"])
 
     best_fitness_global = float("-inf")
     best_individual_global = None
@@ -76,6 +77,7 @@ def run_ga(config):
         offspring = apply_mutation(
             offspring,
             config["mutation_rate"],
+            config["hyperparam_space"]
         )
 
         # =========================
@@ -99,6 +101,7 @@ if __name__ == "__main__":
         "crossover_rate": 0.8,
         "mutation_rate": 0.1,
         "random_seed": 42,
+        "hyperparam_space": HYPERPARAM_SPACE
     }
 
     result = run_ga(config)

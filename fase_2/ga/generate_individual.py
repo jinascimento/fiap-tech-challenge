@@ -1,10 +1,9 @@
 import random
-from fase_2.ga.config import HYPERPARAM_SPACE
 
-def generate_individual():
+def generate_individual(hyperparam_space):
     return {
-        "n_hidden_layers": random.choice(HYPERPARAM_SPACE["n_hidden_layers"]),
-        "n_neurons": random.choice(HYPERPARAM_SPACE["n_neurons"]),
-        "learning_rate_init": random.choice(HYPERPARAM_SPACE["learning_rate_init"]),
-        "activation": random.choice(HYPERPARAM_SPACE["activation"]),
+        "n_hidden_layers": random.choice(hyperparam_space["n_hidden_layers"]),
+        "n_neurons": random.choice(hyperparam_space["n_neurons"]),
+        "learning_rate_init": random.choice(hyperparam_space["learning_rate_init"]),
+        "activation": random.choice(hyperparam_space["activation"]),
     }

@@ -1,15 +1,14 @@
 import random
-from fase_2.ga.config import HYPERPARAM_SPACE
 
-def mutate(individual, mutation_rate=0.1):
+def mutate(individual, mutation_rate=0.1, hyperparam_space = {}):
     mutated = individual.copy()
 
-    for gene, values in HYPERPARAM_SPACE.items():
+    for gene, values in hyperparam_space.items():
         if random.random() < mutation_rate:
             mutated[gene] = random.choice(values)
 
     return mutated
 
 
-def apply_mutation(individuals, mutation_rate=0.1):
-    return [mutate(ind, mutation_rate) for ind in individuals]
+def apply_mutation(individuals, mutation_rate=0.1, hyperparam_space = {}):
+    return [mutate(ind, mutation_rate, hyperparam_space) for ind in individuals]
