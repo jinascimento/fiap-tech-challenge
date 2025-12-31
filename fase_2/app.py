@@ -43,6 +43,26 @@ st.set_page_config(
 )
 
 
+def load_prompt_template(filename: str, **kwargs) -> str:
+    """Carrega um modelo e preenche as lacunas no mesmo"""
+    message = "Ocorreu um erro ao carregar o modelo."
+
+    try:
+        prompt_path = Path("prompts") / f"{filename}.md"
+
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
+
+        return template.format(**kwargs)
+    except FileNotFoundError:
+        message = f"O arquivo de prompt '{filename}.md' não foi encontrado."
+    except KeyError as e:
+        message = f"A variável {e} esperada no modelo não foi fornecida."
+
+    logger.error(message)
+    return message
+
+
 def mock_model_predict(patient: Patient) -> tuple[bool, float]:
     """Simula a inferência do modelo."""
     interval = random.randint(0, 1)
@@ -72,34 +92,16 @@ def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
     """
     Integração real com o Gemini para interpretação de diagnósticos médicos.
     """
-    data = asdict(patient)
+    template_vars = {
+        "data": patient.to_json(),
+        "classification": "ALTO" if prediction == 1 else "BAIXO",
+        "glucose": patient.glucose,
+        "hba1c": patient.hba1c,
+        "bmi": patient.bmi,
+        "probability": f"{proba:.2%}",
+    }
 
-    prompt = f"""
-    Atue como um Especialista em Endocrinologia e Assistente de IA de alta precisão.
-    Sua tarefa é interpretar os resultados de um modelo de Machine Learning otimizado por Algoritmos Genéticos para triagem de Diabetes.
-
-    DADOS CLÍNICOS DO PACIENTE:
-    {json.dumps(data, indent=2)}
-
-    RESULTADO DA PREDIÇÃO:
-    - Classificação: {"DIABETES DETECTADO" if prediction == 1 else "NEGATIVO PARA DIABETES"}
-    - Confiança do Modelo: {proba:.2%}
-
-    SUA RESPOSTA DEVE CONTER DUAS PARTES RIGIDAMENTE SEPARADAS PELO MARCADOR [DIVIDER]:
-
-    PARTE 1: RELATÓRIO TÉCNICO (PARA O MÉDICO)
-    - Analise os biomarcadores (Glicose: {data["glucose"]} mg/dL, HbA1c: {data["hba1c"]}%).
-    - Correlacione com IMC ({data["bmi"]}) e histórico de saúde.
-    - Forneça insights acionáveis e sugira exames complementares se necessário.
-    - Use terminologia médica adequada.
-
-    PARTE 2: COMUNICAÇÃO HUMANIZADA (PARA O PACIENTE)
-    - Explique o resultado de forma simples, empática e sem jargões técnicos.
-    - Foque em acolhimento e nos próximos passos práticos.
-    - Mantenha um tom profissional porém encorajador.
-
-    IMPORTANTE: Use o marcador [DIVIDER] exatamente entre as duas partes.
-    """
+    prompt = load_prompt_template(selected_prompt, **template_vars)
 
     to_professional: str = "LLM indisponível"
     to_patient: str = "Não foi possível gerar uma explicação detalhada"
@@ -133,7 +135,7 @@ def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
                 f"Total Tokens: {total_tokens} (input e output)"
             )
 
-        full_text = response.text
+        full_text = response.text or ""
 
         if "[DIVIDER]" in full_text:
             tech_part, patient_part = full_text.split("[DIVIDER]", 1)
