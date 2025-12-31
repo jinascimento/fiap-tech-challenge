@@ -3,6 +3,7 @@ import logging
 import random
 import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
 import streamlit as st
 from google import genai
@@ -13,6 +14,11 @@ logger = logging.getLogger(__name__)
 GOOGLE_API_KEY: str = st.secrets["GOOGLE_API_KEY"]
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
+
+try:
+    available_prompts = [f.stem for f in Path("prompts").glob("*.md")]
+except Exception:
+    available_prompts = ["padrao"]  # Fallback
 
 
 @dataclass
@@ -148,6 +154,14 @@ def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
 
 st.title("🏥 Sistema Inteligente de Triagem - Diabetes")
 st.markdown("---")
+
+with st.sidebar:
+    st.header("⚙️ Configuração da IA")
+    selected_prompt = st.selectbox(
+        "Estilo de Análise (Prompt)",
+        options=available_prompts,
+        index=0 if "padrao" in available_prompts else 0,
+    )
 
 col1, col2 = st.columns([1, 2])
 
