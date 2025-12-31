@@ -7,6 +7,7 @@ from pathlib import Path
 
 import streamlit as st
 from google import genai
+from google.genai import types
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -106,11 +107,33 @@ def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
     to_professional: str = "LLM indisponível"
     to_patient: str = "Não foi possível gerar uma explicação detalhada"
 
+    system_instruction = """
+    Você é um Especialista em Endocrinologia Sênior e um Assistente de IA Ético.
+
+    SUA MISSÃO:
+    Analisar dados de triagem de diabetes e fornecer feedback duplo (Técnico e Paciente).
+
+    REGRAS DE FORMATAÇÃO (CRÍTICO):
+    - Você DEVE separar as duas seções usando estritamente a tag [DIVIDER].
+    - A primeira seção é técnica, estatística e direta.
+    - A segunda seção é acolhedora, humana e clara (nível de leitura 8ª série).
+    - Não use Markdown complexo que quebre a renderização do Streamlit.
+    """
+
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        temperature=0.2,
+        max_output_tokens=2048,
+        candidate_count=1,
+    )
+
     try:
         start_time = time.perf_counter()
 
         response = client.models.generate_content(
-            model="gemini-3-flash-preview", contents=prompt
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=config,
         )
 
         duration = time.perf_counter() - start_time
