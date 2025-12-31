@@ -9,7 +9,9 @@ from google import genai
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-client = genai.Client(api_key="KEY")
+GOOGLE_API_KEY: str = st.secrets["GOOGLE_API_KEY"]
+
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
 st.set_page_config(
     page_title="Tech Challenge - Diagnóstico Diabetes - Fase 2",
