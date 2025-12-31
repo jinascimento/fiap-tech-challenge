@@ -2,6 +2,7 @@ import json
 import logging
 import random
 import time
+from dataclasses import asdict, dataclass
 
 import streamlit as st
 from google import genai
@@ -13,6 +14,22 @@ GOOGLE_API_KEY: str = st.secrets["GOOGLE_API_KEY"]
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
+
+@dataclass
+class Patient:
+    gender: str
+    age: int
+    hypertension: bool
+    heart_disease: bool
+    smoking_history: str
+    bmi: float
+    hba1c: float
+    glucose: int
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2, ensure_ascii=False)
+
+
 st.set_page_config(
     page_title="Tech Challenge - Diagnóstico Diabetes - Fase 2",
     page_icon="🏥",
@@ -20,35 +37,37 @@ st.set_page_config(
 )
 
 
-def mock_model_predict(data) -> tuple[bool, float]:
+def mock_model_predict(patient: Patient) -> tuple[bool, float]:
     """Simula a inferência do modelo."""
-    interval = random.randint(1, 5)
+    interval = random.randint(0, 1)
 
     time.sleep(interval)
 
     score = 0
 
-    if data["glucose"] > 140:
+    if patient.glucose > 140:
         score += 40
-    if data["hba1c"] > 6.5:
+    if patient.hba1c > 6.5:
         score += 40
-    if data["bmi"] > 30:
+    if patient.bmi > 30:
         score += 10
-    if data["age"] > 50:
+    if patient.age > 50:
         score += 5
-    if data["heart_disease"]:
+    if patient.heart_disease:
         score += 5
 
     probability = min(score + random.randint(0, 5), 99) / 100.0
-    prediction = 1 if probability > 0.5 else 0
+    prediction = True if probability > 0.5 else False
 
     return prediction, probability
 
 
-def llm_generation(data, prediction, proba) -> tuple[str, str]:
+def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
     """
     Integração real com o Gemini para interpretação de diagnósticos médicos.
     """
+    data = asdict(patient)
+
     prompt = f"""
     Atue como um Especialista em Endocrinologia e Assistente de IA de alta precisão.
     Sua tarefa é interpretar os resultados de um modelo de Machine Learning otimizado por Algoritmos Genéticos para triagem de Diabetes.
@@ -76,8 +95,8 @@ def llm_generation(data, prediction, proba) -> tuple[str, str]:
     IMPORTANTE: Use o marcador [DIVIDER] exatamente entre as duas partes.
     """
 
-    tech: str = "LLM indisponível"
-    patient: str = "Não foi possível gerar uma explicação detalhada"
+    to_professional: str = "LLM indisponível"
+    to_patient: str = "Não foi possível gerar uma explicação detalhada"
 
     try:
         start_time = time.perf_counter()
@@ -91,7 +110,7 @@ def llm_generation(data, prediction, proba) -> tuple[str, str]:
         if not response.parts:
             logger.warning("Resposta vazia. Possível bloqueio de segurança")
 
-            return tech, patient
+            return to_professional, to_patient
 
         if response.usage_metadata:
             input_tokens = response.usage_metadata.prompt_token_count
@@ -112,19 +131,19 @@ def llm_generation(data, prediction, proba) -> tuple[str, str]:
 
         if "[DIVIDER]" in full_text:
             tech_part, patient_part = full_text.split("[DIVIDER]", 1)
-            tech = tech_part.strip()
-            patient = patient_part.strip()
+            to_professional = tech_part.strip()
+            to_patient = patient_part.strip()
         else:
             # Caso a resposta não contenha o divisor, a explicação técnica
             # ainda pode ser útil para o médico
-            tech = full_text.strip()
+            to_patient = full_text.strip()
 
             logger.warning("O LLM não utilizou o divisor corretamente")
 
     except Exception as e:
         logger.error(f"Falha ao integrar LLM: {str(e)}", exc_info=True)
 
-    return tech, patient
+    return to_professional, to_patient
 
 
 st.title("🏥 Sistema Inteligente de Triagem - Diabetes")
@@ -163,27 +182,27 @@ with col1:
 
 
 if submit_btn:
-    patient_data = {
-        "gender": gender,
-        "age": age,
-        "hypertension": hypertension,
-        "heart_disease": heart_disease,
-        "smoking": smoking_history,
-        "bmi": bmi,
-        "hba1c": hba1c,
-        "glucose": glucose,
-    }
+    patient: Patient = Patient(
+        gender=gender,
+        age=int(age),
+        hypertension=hypertension,
+        heart_disease=heart_disease,
+        smoking_history=smoking_history,
+        bmi=float(bmi),
+        hba1c=float(hba1c),
+        glucose=int(glucose),
+    )
 
     with col2:
         status_container = st.empty()
 
         # Simulação do ML
         status_container.info("⚙️ Processando dados com o modelo de classificação...")
-        prediction, proba = mock_model_predict(patient_data)
+        prediction, proba = mock_model_predict(patient)
 
         # Simulação da LLM
         status_container.info("🧠 Processando dados com a IA Generativa...")
-        tech_text, patient_text = llm_generation(patient_data, prediction, proba)
+        tech_text, patient_text = llm_generation(patient, prediction, proba)
 
         # Limpa as mensagens de carregamento
         status_container.empty()
@@ -215,7 +234,7 @@ if submit_btn:
             st.markdown(tech_text)
 
             with st.expander("Ver dados brutos (JSON)"):
-                st.json(patient_data)
+                st.json(asdict(patient))
 
         with tab2:
             st.success(
