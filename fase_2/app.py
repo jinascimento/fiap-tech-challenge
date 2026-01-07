@@ -1,21 +1,39 @@
 import json
 import logging
-import random
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 from google import genai
 from google.genai import types
+from model.diabetes import prepare_dataset
+from model.inference import load_inference_model
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# Carrega o modelo e configurações básicas para uso do mesmo
+# -----------------------------------------------------------------------------
+model, scaler, expected_cols = load_inference_model()
+
+smoking_map = {
+    "Nunca fumou": "never",
+    "Ex-fumante": "former",
+    "Fumante atual": "current",
+    "Sem informação": "No Info",
+}
+
+# Configura o cliente para o Google GenAI
+# -----------------------------------------------------------------------------
 GOOGLE_API_KEY: str = st.secrets["GOOGLE_API_KEY"]
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
+# Carrega os "perfis" para que o usuário possa selec
+# -----------------------------------------------------------------------------
 try:
     available_prompts = [f.stem for f in Path("prompts").glob("*.md")]
 except Exception:
@@ -64,34 +82,48 @@ def load_prompt_template(filename: str, **kwargs) -> str:
     return message
 
 
-def mock_model_predict(patient: Patient) -> tuple[bool, float]:
-    """Simula a inferência do modelo."""
-    interval = random.randint(0, 1)
+def model_predict(patient: Patient) -> tuple[bool, float]:
+    input_data = {
+        "gender": "Female" if patient.gender == "Feminino" else "Male",
+        "age": patient.age,
+        "hypertension": 1 if patient.hypertension else 0,
+        "heart_disease": 1 if patient.heart_disease else 0,
+        "smoking_history": smoking_map.get(patient.smoking_history, "No Info"),
+        "bmi": patient.bmi,
+        "HbA1c_level": patient.hba1c,
+        "blood_glucose_level": patient.glucose,
+    }
 
-    time.sleep(interval)
+    # Criação do DataFrame para o paciente
+    df_input = pd.DataFrame([input_data])
 
-    score = 0
+    df_input_processed = prepare_dataset(df_input)
 
-    if patient.glucose > 140:
-        score += 40
-    if patient.hba1c > 6.5:
-        score += 40
-    if patient.bmi > 30:
-        score += 10
-    if patient.age > 50:
-        score += 5
-    if patient.heart_disease:
-        score += 5
+    # Alinhamento das colunas com o modelo treinado
+    # Adiciona colunas faltantes com 0 e remove extras se houver
+    for col in expected_cols:
+        if col not in df_input_processed.columns:
+            df_input_processed[col] = 0
 
-    probability = min(score + random.randint(0, 5), 99) / 100.0
-    prediction = True if probability > 0.5 else False
+    # Garante a ordem das colunas
+    df_input_processed = df_input_processed[expected_cols]
 
-    return prediction, probability
+    # Obtem a predição
+    prediction = model.predict(df_input_processed)[0]
+    proba = model.predict_proba(df_input_processed)[0][1]
+
+    logger.info(
+        f"Prediction: {prediction} / "
+        f"Probability: {proba:.2%} / "
+        f"Data: {json.dumps(input_data)}"
+    )
+
+    return prediction, proba
 
 
 def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
     """
-    Integração real com o Gemini para interpretação de diagnósticos médicos.
+    Integração com o Gemini para interpretação de diagnósticos médicos.
     """
     template_vars = {
         "data": patient.to_json(),
@@ -219,7 +251,6 @@ with col1:
             use_container_width=True,
         )
 
-
 if submit_btn:
     patient: Patient = Patient(
         gender=gender,
@@ -237,7 +268,7 @@ if submit_btn:
 
         # Simulação do ML
         status_container.info("⚙️ Processando dados com o modelo de classificação...")
-        prediction, proba = mock_model_predict(patient)
+        prediction, proba = model_predict(patient)
 
         # Simulação da LLM
         status_container.info("🧠 Processando dados com a IA Generativa...")
@@ -282,7 +313,6 @@ if submit_btn:
             st.markdown(f"> {patient_text}")
 
             st.button("📋 Copiar Texto para Prontuário", help="Simulação de cópia")
-
 else:
     # Estado inicial
     with col2:
