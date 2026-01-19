@@ -34,7 +34,7 @@ O projeto está dividido em duas frentes principais:
 
 #### Modelo
 
-Lorem Ipsum
+O modelo de predição de diabetes utiliza uma rede neural MLP (Multi-Layer Perceptron) otimizada através de **algoritmos genéticos**. O algoritmo genético evolui populações de configurações de hiperparâmetros (número de camadas ocultas, neurônios, taxa de aprendizado e função de ativação), avaliando cada configuração através do treinamento do modelo e cálculo da métrica F1-score como função de fitness. Através de seleção elitista, crossover e mutação, o algoritmo converge para a melhor combinação de hiperparâmetros, maximizando o desempenho do modelo na predição de diabetes.
 
 #### LLM
 
