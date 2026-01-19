@@ -32,7 +32,7 @@ GOOGLE_API_KEY: str = st.secrets["GOOGLE_API_KEY"]
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# Carrega os "perfis" para que o usuário possa selec
+# Carrega os "perfis" para que o usuário possa selecionar a persona desejada
 # -----------------------------------------------------------------------------
 try:
     available_prompts = [f.stem for f in Path("prompts").glob("*.md")]
@@ -122,9 +122,7 @@ def model_predict(patient: Patient) -> tuple[bool, float]:
 
 
 def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
-    """
-    Integração com o Gemini para interpretação de diagnósticos médicos.
-    """
+    """Integração com o Gemini para interpretação de diagnósticos médicos."""
     template_vars = {
         "data": patient.to_json(),
         "classification": "ALTO" if prediction == 1 else "BAIXO",
@@ -180,7 +178,7 @@ def llm_generation(patient: Patient, prediction, proba) -> tuple[str, str]:
             output_tokens = response.usage_metadata.candidates_token_count
             total_tokens = response.usage_metadata.total_token_count
 
-            # Cálculo de vazão (Tokens de saída por segundo é a métrica mais relevante para UX)
+            # Calcula a vazão de tokens por segundo
             tokens_per_sec = output_tokens / duration if duration > 0 else 0
 
             logger.info(

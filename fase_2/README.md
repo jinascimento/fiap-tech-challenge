@@ -76,4 +76,4 @@ A solução em `camouflage.py` utiliza a biblioteca `Pygame` para renderizar a e
 - Rodrigo de Suza Braga - RM368177
 - Jhonatan Izaias do Nascimento - RM366840
 - Fabiano Miranda Pereira - RM367756
-- Yuslley - RM
+- Yuslley Silva Fagundes - RM368827
