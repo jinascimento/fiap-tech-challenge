@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from config.settings import settings
 from pre_processing.pipeline import run as pipeline
@@ -9,7 +10,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(settings.LOG_FILE),
-        logging.StreamHandler(),
+        logging.StreamHandler(stream=sys.stdout),
     ],
 )
 
