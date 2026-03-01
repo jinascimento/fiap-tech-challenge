@@ -1,20 +1,13 @@
 import json
 import logging
 
+from config.logger import get_logger
 from config.settings import settings
 from datasets import load_dataset
 from pre_processing.utils import clean_and_format
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(settings.LOG_FILE),
-        logging.StreamHandler(),
-    ],
-)
-logger = logging.getLogger("pipeline")
+logger = get_logger("pipeline")
 
 
 def fetch_external_data() -> list[dict]:
@@ -73,7 +66,7 @@ def fetch_external_data() -> list[dict]:
 
 def load_synthetic_from_json() -> list[dict]:
     """Carrega dados sintéticos a partir de um arquivo JSON."""
-    synthetic_file = settings.DATA_DIR / "hospital_protocols.json"
+    synthetic_file = settings.PROTOCOLS_DIR / "hospital_protocols.json"
 
     if not synthetic_file.exists():
         logger.warning(f"O arquivo {synthetic_file} não foi encontrado. Pulando...")
