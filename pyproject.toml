@@ -1,14 +1,21 @@
 [project]
 name = "fiap-tech-challenge"
 version = "0.1.0"
-requires-python = ">=3.12.5"
+requires-python = ">=3.13"
 dependencies = [
     "datasets>=4.5.0",
+    "faiss-gpu>=1.13.2",
     "google-genai>=1.56.0",
     "ipython>=9.9.0",
+    "langchain>=1.2.10",
+    "langchain-community>=0.4.1",
+    "langchain-text-splitters>=1.1.1",
+    "langgraph>=1.0.10",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
     "pygame>=2.6.1",
+    "pypdf>=6.7.4",
+    "pytorch>=1.0.2",
     "scikit-learn>=1.8.0",
     "streamlit>=1.52.2",
     "transformers>=5.2.0",
