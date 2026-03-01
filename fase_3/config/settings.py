@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     # Model
     MODEL_NAME: str = "meta-llama/Llama-3.2-3B"
 
+    # Protocols
+    PROTOCOLS_DIR: Path = DATA_DIR / "protocols"
+
+    # Database
+    DATABASE_FILE: Path = DATA_DIR / "hospital.db"
+    DATABASE_VECTOR_STORE: Path = DATA_DIR / "vector_store"
+
     # Utils
     HF_TOKEN: str = "HF_XYZ"
     FORCE_DOWNLOAD: bool = False
