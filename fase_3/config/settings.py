@@ -14,8 +14,7 @@ class Settings(BaseSettings):
     TRAIN_FILE: Path = DATA_DIR / "dataset_medico_treinamento.jsonl"
     LOG_FILE: Path = LOG_DIR / "preprocessing_audit.log"
 
-    # Model
-    MODEL_NAME: str = "meta-llama/Llama-3.2-3B"
+    MODEL_NAME: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
     # Protocols
     PROTOCOLS_DIR: Path = DATA_DIR / "protocols"
