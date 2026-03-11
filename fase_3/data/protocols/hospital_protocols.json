@@ -1,0 +1,10 @@
+[
+    {
+        "instruction": "Protocolo Interno: Conduta para suspeita de Dengue no Dr. Silva.",
+        "output": "Hidratação oral vigorosa e analgésicos. Fonte: Protocolo de Infectologia."
+    },
+    {
+        "instruction": "Modelo de Receita: Paciente Maria com Hipertensão.",
+        "output": "Receita Gerada: Losartana 50mg ao dia. Assinado: Dra. Oliveira."
+    }
+]
