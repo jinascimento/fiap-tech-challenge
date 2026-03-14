@@ -21,11 +21,16 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_FILE: Path = DATA_DIR / "hospital.db"
-    DATABASE_VECTOR_STORE: Path = DATA_DIR / "vector_store"
+    DATABASE_FORCE_REGENERATION: bool = False
 
     # Utils
     HF_TOKEN: str = "HF_XYZ"
     FORCE_DOWNLOAD: bool = False
+
+    # Agent
+    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_VECTOR_STORE: Path = DATA_DIR / "vector_store"
+    EMBEDDING_FORCE_REGENERATION: bool = False
 
     class Config:
         env_file = ".env"

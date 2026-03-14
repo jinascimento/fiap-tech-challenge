@@ -31,6 +31,7 @@ for message in st.session_state.messages:
 # Chat
 if prompt := st.chat_input("Como posso auxiliar na conduta clínica hoje?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
+
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -41,12 +42,16 @@ if prompt := st.chat_input("Como posso auxiliar na conduta clínica hoje?"):
             inputs = {"input": prompt, "logs": []}
             final_state = app.invoke(inputs)
 
-            st.write(f"🆔 Identificando paciente...")
-            time.sleep(0.5)  # Simulação de latência para UX
+            st.write("🆔 Identificando paciente...")
+
+            # time.sleep(1)  # Simulação de latência para UX
+
             st.write(
                 f"📊 Consultando banco de dados (ID: {final_state.get('patient_id')})..."
             )
-            time.sleep(0.5)
+
+            # time.sleep(1)
+
             st.write("🧠 Analisando protocolos e gerando conduta...")
 
             status.update(label="Análise Concluída!", state="complete", expanded=False)
