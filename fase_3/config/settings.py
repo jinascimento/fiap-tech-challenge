@@ -14,19 +14,23 @@ class Settings(BaseSettings):
     TRAIN_FILE: Path = DATA_DIR / "dataset_medico_treinamento.jsonl"
     LOG_FILE: Path = LOG_DIR / "preprocessing_audit.log"
 
-    # Model
-    MODEL_NAME: str = "meta-llama/Llama-3.2-3B"
+    MODEL_NAME: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
     # Protocols
     PROTOCOLS_DIR: Path = DATA_DIR / "protocols"
 
     # Database
     DATABASE_FILE: Path = DATA_DIR / "hospital.db"
-    DATABASE_VECTOR_STORE: Path = DATA_DIR / "vector_store"
+    DATABASE_FORCE_REGENERATION: bool = False
 
     # Utils
     HF_TOKEN: str = "HF_XYZ"
     FORCE_DOWNLOAD: bool = False
+
+    # Agent
+    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_VECTOR_STORE: Path = DATA_DIR / "vector_store"
+    EMBEDDING_FORCE_REGENERATION: bool = False
 
     class Config:
         env_file = ".env"

@@ -1,87 +1,101 @@
-import time
+import argparse
+import logging
+import os
 
-import streamlit as st
-from agents.graph import app
+from config.settings import settings
 
-st.set_page_config(
-    page_title="Assistente Médico - Tech Challenge",
-    page_icon="🏥",
-    layout="wide",
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(settings.LOG_FILE),
+        logging.StreamHandler(),
+    ],
 )
 
-st.markdown(
-    "<style> .stAlert { margin-top: 10px; } </style>",
-    unsafe_allow_html=True,
-)
+logger = logging.getLogger("fase_3")
 
-st.title("🏥 Assistente Médico Hospitalar")
+os.environ["HF_TOKEN"] = settings.HF_TOKEN
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
 
-# Histórico
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        if "source" in message:
-            st.caption(f"📌 **Fontes:** {message['source']}")
-        if message.get("risk") == "ALTO":
-            st.error("⚠️ Risco Elevado Detectado")
+def main():
+    parser = argparse.ArgumentParser(
+        description="Fase 3: pipeline de dados e/ou fine-tuning Llm (QLoRA + LoRA)."
+    )
 
-# Chat
-if prompt := st.chat_input("Como posso auxiliar na conduta clínica hoje?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    parser.add_argument(
+        "--preprocess",
+        action="store_true",
+        help="Executa o pipeline de pré-processamento (gera dataset JSONL).",
+    )
 
-    with st.chat_message("assistant"):
-        with st.status("Processando fluxo clínico...", expanded=True) as status:
-            st.write("🔍 Classificando intenção...")
+    parser.add_argument(
+        "--agent",
+        action="store_true",
+        help="Prepara os dados para consumo do agente (base relacional e vetorial).",
+    )
 
-            inputs = {"input": prompt, "logs": []}
-            final_state = app.invoke(inputs)
+    parser.add_argument(
+        "--train",
+        action="store_true",
+        help="Executa o fine-tuning (QLoRA + LoRA) usando o dataset em data/dataset_medico_treinamento.jsonl.",
+    )
 
-            st.write(f"🆔 Identificando paciente...")
-            time.sleep(0.5)  # Simulação de latência para UX
-            st.write(
-                f"📊 Consultando banco de dados (ID: {final_state.get('patient_id')})..."
-            )
-            time.sleep(0.5)
-            st.write("🧠 Analisando protocolos e gerando conduta...")
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Executa pre-processamento, cria a bases relacional e vetorial para o agente e treina o modelo.",
+    )
 
-            status.update(label="Análise Concluída!", state="complete", expanded=False)
+    parser.add_argument(
+        "--app",
+        action="store_true",
+        help="Instruções sobre como executar a aplicação web.",
+    )
 
-        # Resposta Final
-        full_response = final_state.get("response", "Erro ao processar resposta.")
+    args = parser.parse_args()
 
-        st.markdown(full_response)
+    if args.full:
+        args.preprocess = True
+        args.agent = True
+        args.train = True
 
-        st.session_state.messages.append(
-            {
-                "role": "assistant",
-                "content": full_response,
-                "source": ", ".join(final_state.get("sources", ["Interna"])),
-                "risk": final_state.get("risk_level", "BAIXO"),
-                "full_logs": final_state.get("logs", []),
-            }
+    if args.preprocess:
+        from pre_processing.pipeline import run as preprocess
+
+        preprocess()
+
+    if args.agent:
+        from agents.utils import create_vector_store, setup_database
+
+        setup_database()
+        create_vector_store()
+
+    if args.train:
+        from trainning.train_llm import run_training
+
+        run_training(
+            model_name=settings.MODEL_NAME,
+            train_file=settings.TRAIN_FILE,
+            output_dir=settings.BASE_DIR / "output_llm",
         )
 
+    if args.app:
+        logger.info("""
+            Para executar a aplicação web, siga os passos abaixo:
 
-with st.sidebar:
-    st.header("🕵️ Auditoria do Agente")
+            1. Certifique-se de que os pre-requisitos foram satisfeitos
+                1.1. Execute o pré-processamento dos dados usando --preprocess
+                1.2. Prepare as bases de dados para o agente usando --agent
+                1.3. Treine o modelo usando --train
+            2. Execute a aplicação web usando o comando: `uv run streamlit run ui.py`
+        """)
 
-    if st.session_state.messages:
-        last_message = st.session_state.messages[-1]
-        if "full_logs" in last_message:
-            st.subheader("Rastro de Decisão")
-            for log in last_message["full_logs"]:
-                st.write(f"• {log}")
+    if not (args.preprocess or args.agent or args.train or args.app):
+        parser.print_help()
 
-    st.divider()
+        logger.info("Nenhuma opção escolhida.")
 
-    if st.button("Limpar Histórico"):
-        st.session_state.messages = []
-        st.rerun()
 
-    st.subheader("⚠️ Limites de Atuação")
-    st.warning("Validação humana obrigatória.")
+if __name__ == "__main__":
+    main()

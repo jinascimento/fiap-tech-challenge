@@ -220,3 +220,5 @@ __marimo__/
 # Cache files from Tech Challenge 3
 **/fase_3/data/raw/**
 **/fase_3/data/*.jsonl
+
+**/fase_3/output_llm*/checkpoint-*/

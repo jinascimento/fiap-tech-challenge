@@ -6,25 +6,31 @@ from agents.constants import SELECT_EXAMS, SELECT_PATIENT
 from agents.state import AgentState
 from config.logger import get_logger
 from config.settings import settings
-from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from trainning.infer_llm import generate_answer, load_model
 
-logger = get_logger(__name__)
+logger = get_logger("agent")
 
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-INDEX_PATH = str(settings.DATABASE_VECTOR_STORE)
+model, tokenizer = load_model()
 
-embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
+vector_db = None
+embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_NAME)
 
-if os.path.exists(INDEX_PATH):
+
+if settings.EMBEDDING_VECTOR_STORE.exists():
     vector_db = FAISS.load_local(
-        INDEX_PATH,
+        settings.EMBEDDING_VECTOR_STORE.as_posix(),
         embeddings,
         allow_dangerous_deserialization=True,
     )
 else:
+    logger.warning(
+        f"Base vetorial não encontrada em {settings.EMBEDDING_VECTOR_STORE}."
+    )
     vector_db = None
-    print("⚠️ Alerta: Banco de vetores não encontrado em", INDEX_PATH)
 
 
 def node_extractor(state: AgentState):
@@ -55,9 +61,10 @@ def node_loader(state: AgentState):
     conn = sqlite3.connect("data/hospital.db")
     cursor = conn.cursor()
 
-    # Simulando um ambiente real, implementamos uma camada de persistência (com SQLite,
-    # pela simplicidade), essa poderia alimentada por processos de ETL que garantissem
-    # a integridade, consistência e anonimização dos dados.
+    # Simulando um ambiente real, implementamos uma camada de persistência
+    # (com SQLite, pela simplicidade), essa base poderia ser alimentada por
+    # processos de ETL que garantissem a integridade, consistência e
+    # anonimização dos dados.
 
     patient_id = state["patient_id"]
 
@@ -118,7 +125,7 @@ def node_assistant(state: AgentState):
     )
     fontes_encontradas = ["Base de conhecimento geral"]
 
-    # 1. Busca no FAISS (Vector Store)
+    # Busca no FAISS (Vector Store)
     if vector_db:
         # Criamos uma query que combina a pergunta com o contexto do paciente
         query_busca = f"Paciente: {dados_paciente}. Pergunta: {pergunta_usuario}"
@@ -135,20 +142,40 @@ def node_assistant(state: AgentState):
                 )
             )
 
-    # 2. Lógica de Risco baseada no conteúdo recuperado
+    # Lógica de Risco baseada no conteúdo recuperado
     risco = "BAIXO"
-    if any(
-        term in contexto_rag.lower()
-        for term in ["sepse", "crítico", "urgente", "elevado"]
-    ):
+    terms = ["sepse", "crítico", "urgente", "elevado"]
+    rag_context = contexto_rag.lower()
+
+    if any(term in rag_context for term in terms):
         risco = "ALTO"
 
-    # 3. Resposta Estruturada
-    analise_clinica = f"Com base nos protocolos ({', '.join(fontes_encontradas)}):\n{contexto_rag[:500]}..."
+    # Resposta estruturada
+    dados = (
+        f"Dados do paciente: {dados_paciente}\n"
+        f"Pergunta do médico: {pergunta_usuario}\n"
+        f"Protocolos consultados: {', '.join(fontes_encontradas)}\n"
+        f"Contexto RAG: {contexto_rag[:500]}...\n"
+    )
+
+    analise_clinica = (
+        "Com base nos dados abaixo, responda à pergunta do médico, "
+        f"destacando os pontos críticos que levaram à classificação de risco {risco}:\n\n"
+        f"{dados}"
+    )
+
+    analise = generate_answer(model, tokenizer, analise_clinica)
+
+    sugestao_caso = (
+        f"Baseado na análise abaixo, faça recomendações que o médico possa seguir:\n\n"
+        f"{analise}"
+    )
+
+    sugestao = generate_answer(model, tokenizer, sugestao_caso)
 
     resposta_final = (
-        f"**ANÁLISE DO CASO:**\n{analise_clinica}\n\n"
-        f"**SUGESTÃO:** Seguir protocolo de {'Urgência' if risco == 'ALTO' else 'Monitoramento'}."
+        f"**ANÁLISE DO CASO:** {analise}\n\n**SUGESTÃO:** {sugestao}"
+        # f"**SUGESTÃO:** Seguir protocolo de {'Urgência' if risco == 'ALTO' else 'Monitoramento'}."
     )
 
     return {
@@ -174,7 +201,7 @@ def node_reviewer(state: AgentState):
     alerta_emergencia = ""
 
     if nivel_risco == "ALTO":
-        alerta_emergencia = "\n⚠️ ALERTA: Indicadores de risco elevado detectados. Considere avaliação imediata."
+        alerta_emergencia = "\n⚠️ ALERTA: Indicadores de risco elevado detectados. Considere avaliação imediata.\n\n"
 
     rodape_fontes = "\nFontes consultadas: " + ", ".join(fontes) if fontes else ""
 
