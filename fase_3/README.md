@@ -34,26 +34,20 @@ O `main.py` já define `HF_TOKEN` a partir de `config.settings` (e de variáveis
 
 ## Fine-tuning de LLM (QLoRA + LoRA)
 
-O treinamento usa o dataset pré-processado em `data/dataset_medico_treinamento.jsonl` (formato `instruction` / `output`), com quantização 4-bit (QLoRA), LoRA em `q_proj` e `v_proj`, e salva apenas os adaptadores ao final.
+O detalhamento dessa etapa, pode ser visto em maior profundidade aqui[analise_fine_tuning.md].
 
-### Dependências
-
-Instale as dependências do projeto (inclui `transformers`, `peft`, `bitsandbytes`, `accelerate`, `torch`, `datasets`):
-
-```bash
-# Na raiz do repositório
-uv sync
-# ou: pip install -e .
-```
-
-## Agent
+## Agente
 
 Com o modelo ajustado pela etapa de `fine tuning` e os dados (como protocolos, etc) também já prontos, é possível criarmos o agente.
 
 Nesta etapa, criamos as bases vetorial e relacional (usando `FAISS` e `SQLite` respectivamente)
 
 > [!NOTE]
+> A base vetorial é construída a partir de [documentos](data/protocols/) em PDF
+
+> [!NOTE]
 > A base relacional, representa o produto de uma extração (ETL) onde os dados são removidos e/ou anonimizados
+
 
 Quando o agente é carregado e acionado, temos uma cadeia de ações (`chain`) que identifica o paciente em questão, carrega os dados do mesmo, recupera informações dos protocolos e finalmente formata uma resposta amigável (usando `LLM`) que o profissional pode usar **como suporte**.
 
@@ -126,7 +120,7 @@ Parâmetros úteis do `train_llm.py`:
 - `--batch-size`, `--grad-accum`, `--epochs`, `--lr`: hiperparâmetros de treino.
 - `--flash-attn`: usa Flash Attention 2 (requer `flash-attn` instalado e GPU compatível).
 
-### Inferência com o modelo fine-tunado
+### Inferência com o modelo fine-tunned
 
 Após o fine-tuning, os adaptadores LoRA são salvos (por padrão) em algo como `fase_3/output_llm/adapter_final/` ou no diretório informado em `--output-dir`.
 
