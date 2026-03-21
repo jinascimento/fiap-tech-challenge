@@ -8,7 +8,7 @@ Este repositório contém o projeto desenvolvido para a `Fase 3` do curso de Pó
 
 ## Pre Processing
 
-O fluxo de pre-processamento consiste em carregarmos dois `datasets` (`PubMedQA` e `MedQuAD`) e [dados sintéticos](/data/protocols/hospital_protocols.json) representados protocolos hospitalares.
+O fluxo de pre-processamento consiste em carregarmos dois `datasets` (`PubMedQA` e `MedQuAD`) e [dados sintéticos](./data/protocols/hospital_protocols.json) representados protocolos hospitalares.
 
 Esse processo "combina" os dados em um arquivo `JSONL` que será usado posteriormente.
 
@@ -34,7 +34,7 @@ O `main.py` já define `HF_TOKEN` a partir de `config.settings` (e de variáveis
 
 ## Fine-tuning de LLM (QLoRA + LoRA)
 
-O detalhamento dessa etapa, pode ser visto em maior profundidade aqui[analise_fine_tuning.md].
+O detalhamento dessa etapa, pode ser visto em maior profundidade [aqui](./analise_fine_tuning.md).
 
 ## Agente
 
@@ -43,7 +43,7 @@ Com o modelo ajustado pela etapa de `fine tuning` e os dados (como protocolos, e
 Nesta etapa, criamos as bases vetorial e relacional (usando `FAISS` e `SQLite` respectivamente)
 
 > [!NOTE]
-> A base vetorial é construída a partir de [documentos](data/protocols/) em PDF
+> A base vetorial é construída a partir de [documentos](./data/protocols/) em PDF
 
 > [!NOTE]
 > A base relacional, representa o produto de uma extração (ETL) onde os dados são removidos e/ou anonimizados
