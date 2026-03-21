@@ -2,6 +2,36 @@
 
 Este repositório contém o projeto desenvolvido para a `Fase 3` do curso de Pós-Graduação em IA. O foco desta etapa é um assistente virtual médico.
 
+> [!NOTE]
+> Os fluxos necessários para pré-processar os dados, treinar o modelo, etc. estão acessíveis através da `cli` exposta pelo arquivo `main`.
+> É possível acessar todas as opções através de `uv run python main.py --help`
+
+## Pre Processing
+
+O fluxo de pre-processamento consiste em carregarmos dois `datasets` (`PubMedQA` e `MedQuAD`) e [dados sintéticos](/data/protocols/hospital_protocols.json) representados protocolos hospitalares.
+
+Esse processo "combina" os dados em um arquivo `JSONL` que será usado posteriormente.
+
+Esse fluxo é disparado através da `cli` com o comando abaixo:
+
+```bash
+uv run python main.py --preprocess
+```
+
+### Token Hugging Face
+
+Dados e modelos usados nesta etapa, demandam acesso a plataforma `Hugging Face`, mesmo o acesso sendo aberto, recomenda-se configurar um token de leitura:
+
+1. Crie um token em [Hugging Face → Settings → Access Tokens](https://huggingface.co/settings/tokens).
+2. Configure no ambiente ou em `.env` na pasta `fase_3`:
+
+```bash
+export HF_TOKEN="seu_token_aqui"
+# ou crie fase_3/.env com: HF_TOKEN=seu_token_aqui
+```
+
+O `main.py` já define `HF_TOKEN` a partir de `config.settings` (e de variáveis de ambiente).
+
 ## Fine-tuning de LLM (QLoRA + LoRA)
 
 O treinamento usa o dataset pré-processado em `data/dataset_medico_treinamento.jsonl` (formato `instruction` / `output`), com quantização 4-bit (QLoRA), LoRA em `q_proj` e `v_proj`, e salva apenas os adaptadores ao final.
@@ -16,47 +46,71 @@ uv sync
 # ou: pip install -e .
 ```
 
-### Token Hugging Face
+## Agent
 
-O modelo padrão configurado é o `TinyLlama/TinyLlama-1.1B-Chat-v1.0`, que é **aberto** e geralmente não exige acesso gated. Ainda assim, é recomendável configurar um token de leitura para o Hugging Face (caso use outros modelos no futuro):
+Com o modelo ajustado pela etapa de `fine tuning` e os dados (como protocolos, etc) também já prontos, é possível criarmos o agente.
 
-1. Crie um token em [Hugging Face → Settings → Access Tokens](https://huggingface.co/settings/tokens).
-2. Configure no ambiente ou em `.env` na pasta `fase_3`:
+Nesta etapa, criamos as bases vetorial e relacional (usando `FAISS` e `SQLite` respectivamente)
+
+> [!NOTE]
+> A base relacional, representa o produto de uma extração (ETL) onde os dados são removidos e/ou anonimizados
+
+Quando o agente é carregado e acionado, temos uma cadeia de ações (`chain`) que identifica o paciente em questão, carrega os dados do mesmo, recupera informações dos protocolos e finalmente formata uma resposta amigável (usando `LLM`) que o profissional pode usar **como suporte**.
 
 ```bash
-export HF_TOKEN="seu_token_aqui"
-# ou crie fase_3/.env com: HF_TOKEN=seu_token_aqui
+uv run python main.py --agent
 ```
 
-O `main.py` já define `HF_TOKEN` a partir de `config.settings` (e de variáveis de ambiente).
+Abaixo, o diagrama com o fluxo executado pelo agente:
 
-### Execução
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	classifier(classifier)
+	extractor(extractor)
+	ask_id(ask_id)
+	loader(loader)
+	assistant(assistant)
+	reviewer(reviewer)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> classifier;
+	assistant --> reviewer;
+	classifier --> extractor;
+	extractor -.-> ask_id;
+	extractor -.-> loader;
+	loader --> assistant;
+	ask_id --> __end__;
+	reviewer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
 
-**Recomendado:** ativar o ambiente e rodar a partir da pasta `fase_3`:
+## Execução
+
+Com todas as etapas completas, é possível acessarmos o agente através de uma interface (web) via `Streamlit`.
 
 ```bash
 cd fase_3
+uv run streamlit run ui.py
 ```
 
-- **Apenas pipeline** (gerar/atualizar o JSONL de treino):
+O comando acima, irá iniciar o servidor e abrir o navegador na interface que simula um chat com o agente, onde é possível fazer perguntas como:
 
-```bash
-python main.py --pipeline
-```
+> Qual o estado de saúde do paciente 123?
 
-- **Apenas fine-tuning** (usa o JSONL já existente em `data/dataset_medico_treinamento.jsonl`):
+> [!TIP]
+> Os identificadores dos pacientes são `123`, `456` e `789`
 
-```bash
-python main.py --train
-```
 
-- **Pipeline + fine-tuning em sequência:**
+## Extra
 
-```bash
-python main.py --full
-```
-
-- **Treinamento direto pelo script** (mais opções):
+É possível treinarmos o modelo diretamente pelos script:
 
 ```bash
 python trainning/train_llm.py --data data/dataset_medico_treinamento.jsonl --output-dir output_llm --epochs 3
@@ -84,11 +138,11 @@ cd fase_3
 # Ajuste o caminho abaixo para o diretório de adaptadores que você treinou
 sed -i '' 's|ADAPTER_DIR = "output_llm_r16_lr5e-6/adapter_final"|ADAPTER_DIR = "output_llm/adapter_final"|' infer_llm.py
 
-python infer_llm.py
+python trainning/infer_llm.py
 
 ou com uv:
 
-uv run python infer_llm.py
+uv run python trainning/infer_llm.py
 ```
 
 O script `infer_llm.py`:
