@@ -7,7 +7,6 @@ from agents.state import AgentState
 from config.logger import get_logger
 from config.settings import settings
 
-# from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from trainning.infer_llm import generate_answer, load_model
