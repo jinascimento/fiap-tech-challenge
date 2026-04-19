@@ -222,3 +222,6 @@ __marimo__/
 **/fase_3/data/*.jsonl
 
 **/fase_3/output_llm*/checkpoint-*/
+
+# Google Cloud credentials
+**/fase_4/google-credentials.json
