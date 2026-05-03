@@ -1,7 +1,9 @@
-streamlit>=1.52.2
-pandas>=2.3.0
-pydantic-settings>=2.13.1
-google-cloud-storage>=2.14.0
-google-cloud-firestore>=2.14.0
-google-cloud-texttospeech>=2.36.0
-google-genai>=1.56.0
+streamlit
+pandas
+pydantic-settings
+google-cloud-storage
+google-cloud-firestore
+google-cloud-texttospeech
+google-cloud-videointelligence
+google-genai
+python-dotenv
