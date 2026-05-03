@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.venv/
+.env
+.env.*
+.DS_Store
+
+# Artefatos e dados locais
+test_audios/
+logs/
+terraform/
+*.tfstate
+*.tfstate.*
+
+# Credenciais locais
+google-credentials.json

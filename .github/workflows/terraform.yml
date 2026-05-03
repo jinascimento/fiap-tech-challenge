@@ -1,0 +1,82 @@
+name: 'Terraform Infrastructure'
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform Action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./fase_4/terraform
+      PROJECT_ID: "gen-lang-client-0574046440"
+      REGION: "us-central1"
+      REPO_NAME: "tc4-saude-mulher-repo"
+
+    defaults:
+      run:
+        working-directory: ${{ env.working-directory }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+
+    - name: 'Configure Docker for Artifact Registry'
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Format
+      run: terraform fmt -check
+
+    - name: Terraform Plan
+      if: github.event_name == 'workflow_dispatch' && inputs.action == 'plan'
+      run: terraform plan -no-color -input=false
+
+    # Passo 1 (Apenas para Apply): Garantir que o repositório existe antes do push
+    - name: Terraform Apply Repo Only
+      if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
+      run: terraform apply -target=module.compute.google_artifact_registry_repository.repo -auto-approve -input=false
+
+    # Passo 2 (Apenas para Apply): Build e Push da Imagem
+    - name: Docker Build and Push
+      if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
+      run: |
+        IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/app:latest"
+        docker build -t $IMAGE_TAG -f ../Dockerfile ../..
+        docker push $IMAGE_TAG
+
+    # Passo 3 (Apenas para Apply): Apply completo para o Cloud Run e demais recursos
+    - name: Terraform Apply Complete
+      if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
+      run: terraform apply -auto-approve -input=false
+
+    - name: Terraform Destroy
+      if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+      run: terraform destroy -auto-approve -input=false
