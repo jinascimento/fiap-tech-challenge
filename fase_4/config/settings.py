@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     LOG_FILE: Path = LOG_DIR / "fase_4.log"
 
     # GCP
-    PROJECT_ID: str = "my-project-96815-1684258891691"
-    BUCKET_NAME: str = "tc4-saude-mulher-storage-bucket-2"
+    PROJECT_ID: str = "gen-lang-client-0574046440"
+    BUCKET_NAME: str = "tc4-saude-mulher-storage-bucket"
     GCP_LOCATION: str = "us-central1"
 
     # Audio generation
