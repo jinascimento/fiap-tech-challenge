@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
@@ -23,10 +24,15 @@ class Settings(BaseSettings):
     TTS_VOICE_NAME: str = "pt-BR-Neural2-C"
 
     class Config:
-        env_file = ".env"
+        env_file = str(Path(__file__).resolve().parent.parent / ".env")
+        extra = "ignore"
 
 
 settings = Settings()
+
+# Configuração de credenciais GCP
+if settings.GOOGLE_CREDENTIALS_FILE.exists():
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(settings.GOOGLE_CREDENTIALS_FILE)
 
 # Inicializacao de diretorios
 settings.TEST_AUDIOS_DIR.mkdir(parents=True, exist_ok=True)
