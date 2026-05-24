@@ -509,6 +509,7 @@ dependencies = [
     { name = "google-cloud-firestore" },
     { name = "google-cloud-storage" },
     { name = "google-cloud-texttospeech" },
+    { name = "google-cloud-videointelligence" },
     { name = "google-genai" },
     { name = "grandalf" },
     { name = "ipython" },
@@ -517,6 +518,7 @@ dependencies = [
     { name = "langchain-huggingface" },
     { name = "langchain-text-splitters" },
     { name = "langgraph" },
+    { name = "pandas" },
     { name = "peft" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -538,6 +540,7 @@ requires-dist = [
     { name = "google-cloud-firestore", specifier = ">=2.14.0" },
     { name = "google-cloud-storage", specifier = ">=2.14.0" },
     { name = "google-cloud-texttospeech", specifier = ">=2.36.0" },
+    { name = "google-cloud-videointelligence", specifier = ">=2.19.0" },
     { name = "google-genai", specifier = ">=1.56.0" },
     { name = "grandalf", specifier = ">=0.8" },
     { name = "ipython", specifier = ">=9.9.0" },
@@ -546,6 +549,7 @@ requires-dist = [
     { name = "langchain-huggingface", specifier = ">=1.2.1" },
     { name = "langchain-text-splitters", specifier = ">=1.1.1" },
     { name = "langgraph", specifier = ">=1.0.10" },
+    { name = "pandas", specifier = ">=2.3.3" },
     { name = "peft", specifier = ">=0.13.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
@@ -780,6 +784,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1a/fe/670610dce6852c8fbdd723101a2ffb497d196bc242cb04a1312339f49d67/google_cloud_texttospeech-2.36.0.tar.gz", hash = "sha256:6c605af7e4774c1bac99fcaaf4538f152b10bba7738a23f42184557f444dc6b7", size = 196558, upload-time = "2026-04-02T21:23:42.236Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/76/1a/0317eaa1ccd6e3645d570851574bb7c1a1cfa3504bb114b7211db59b154d/google_cloud_texttospeech-2.36.0-py3-none-any.whl", hash = "sha256:03f76162543e9d77ecbab823c1cc3728c42ef40547353bcfdbd9ac0e71cb8121", size = 200086, upload-time = "2026-04-02T21:23:13.444Z" },
+]
+
+[[package]]
+name = "google-cloud-videointelligence"
+version = "2.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/af/a1d11dc04a694f58536523c7f0cd266dff454b29b610fc57bf85afc1733f/google_cloud_videointelligence-2.19.0.tar.gz", hash = "sha256:7b320c18a0475b08dde9b60a0fbfdf8915320c20966159fad80b5594089d561e", size = 259738, upload-time = "2026-03-26T22:18:30.163Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/4f/6ae7b3f9c81c70ecf08fd56dee17356add4730e708620312d0caf5eb2d06/google_cloud_videointelligence-2.19.0-py3-none-any.whl", hash = "sha256:b11b04c2643a50dfb030c8ae16b0f50746319c986d3570f46a6b4e16bb0b1b5b", size = 288236, upload-time = "2026-03-26T22:13:21.662Z" },
 ]
 
 [[package]]
