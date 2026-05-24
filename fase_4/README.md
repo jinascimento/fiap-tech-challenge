@@ -15,13 +15,13 @@ A infraestrutura é gerenciada via **Terraform** e o ciclo de vida da aplicaçã
 ### Comandos de Automação (Makefile)
 Dentro da pasta `fase_4`, você pode utilizar os seguintes comandos:
 
-- `make deploy`: Executa o fluxo completo (Build da imagem -> Push para o Artifact Registry -> Aplicação do Terraform).
-- `make build`: Constrói a imagem Docker localmente (forçando plataforma linux/amd64).
-- `make push`: Garante a existência do repositório no GCP e envia a imagem.
+- `make deploy`: Executa o fluxo completo (Build da imagem -> Push para o Artifact Registry -> Aplicação do Terraform com digest imutável).
+- `make build`: Constrói a imagem Docker localmente com as tags `latest` e `git-sha` (forçando plataforma linux/amd64).
+- `make push`: Garante a existência do repositório no GCP, envia `latest` e `git-sha`, e grava o digest ativo para o Cloud Run.
 - `make tf-apply`: Sincroniza e aplica as mudanças de infraestrutura.
 - `make tf-destroy`: Remove todos os recursos criados no GCP (com auto-approve).
 
-> **Nota:** O `make deploy` é resiliente e lida automaticamente com a ativação de APIs e importação de recursos caso o repositório já exista.
+> **Nota:** O `make deploy` mantém a tag `latest` para navegação no repositório, mas publica o Cloud Run usando o digest da imagem, garantindo que cada deploy gere uma nova revisão quando houver uma nova imagem.
 
 ## 🎙️ Geração de Áudios de Teste
 

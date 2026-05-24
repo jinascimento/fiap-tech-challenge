@@ -17,3 +17,9 @@ variable "app_name" {
   description = "Nome do projeto para prefixar recursos"
   type        = string
 }
+
+variable "container_image" {
+  description = "Imagem efetiva a ser usada pelo Cloud Run"
+  type        = string
+  default     = null
+}

@@ -6,6 +6,10 @@ resource "google_artifact_registry_repository" "repo" {
   format        = "DOCKER"
 }
 
+locals {
+  default_container_image = "${var.region}-docker.pkg.dev/${var.project}/${google_artifact_registry_repository.repo.repository_id}/app:latest"
+}
+
 # Service Account para o Cloud Run
 resource "google_service_account" "run_sa" {
   account_id   = "${var.app_name}-run-sa"
@@ -50,7 +54,7 @@ resource "google_cloud_run_v2_service" "app" {
   template {
     service_account = google_service_account.run_sa.email
     containers {
-      image = "${var.region}-docker.pkg.dev/${var.project}/${google_artifact_registry_repository.repo.repository_id}/app:latest" # Placeholder
+      image = coalesce(var.container_image, local.default_container_image)
       
       env {
         name  = "BUCKET_NAME"

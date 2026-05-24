@@ -16,4 +16,5 @@ module "compute" {
   region      = var.region
   app_name    = var.app_name
   bucket_name = module.storage.bucket_name
+  container_image = var.container_image
 }

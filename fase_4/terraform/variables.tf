@@ -14,3 +14,9 @@ variable "app_name" {
   type        = string
   default     = "tech-challenge-4"
 }
+
+variable "container_image" {
+  description = "Imagem efetiva do Cloud Run. Quando nula, usa a tag latest do repositório."
+  type        = string
+  default     = null
+}
