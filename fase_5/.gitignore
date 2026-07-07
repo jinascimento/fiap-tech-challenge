@@ -1,0 +1,9 @@
+.venv/
+*.pt
+!models/*.pt
+runs/
+weights/
+logs/
+reports/*.jpg
+reports/*.png
+__pycache__/

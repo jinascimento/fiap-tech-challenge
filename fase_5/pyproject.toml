@@ -1,0 +1,15 @@
+[project]
+name = "stride-threat-modeling"
+version = "0.1.0"
+description = "Deteccao automatica de componentes/fluxos em diagramas de arquitetura e geracao de relatorio de ameacas STRIDE"
+requires-python = ">=3.11"
+dependencies = [
+    "ultralytics",
+    "networkx",
+    "pyyaml",
+    "pillow",
+    "numpy",
+]
+
+[tool.uv]
+package = false

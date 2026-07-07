@@ -1,0 +1,279 @@
+# Base de conhecimento STRIDE por tipo de componente + regra de cruzamento de
+# trust boundary. Ver eda/RELATORIO_EDA.md secao 8: nenhum dos dois datasets
+# (components/flows) cobre esta etapa -- foi curada manualmente com base no
+# catalogo classico STRIDE (Microsoft Threat Modeling) e praticas de
+# seguranca AWS/Azure para cada tipo de componente.
+#
+# Categorias validas: Spoofing, Tampering, Repudiation, Information Disclosure,
+# Denial of Service, Elevation of Privilege.
+
+components:
+  actor_user:
+    threats:
+      - category: Spoofing
+        description: "Atacante rouba credenciais/sessao e se passa por um usuario legitimo."
+        mitigation: "MFA, gestao de sessao robusta (tokens de vida curta, rotacao), deteccao de anomalias de login."
+      - category: Repudiation
+        description: "Usuario nega ter realizado uma acao por falta de trilha de auditoria confiavel."
+        mitigation: "Log de auditoria assinado correlacionando usuario, acao e timestamp."
+
+  actor_admin:
+    threats:
+      - category: Spoofing
+        description: "Comprometimento de credencial administrativa concede controle total do sistema."
+        mitigation: "MFA com chave de hardware, estacoes de acesso privilegiado (PAW), acesso admin just-in-time."
+      - category: Elevation of Privilege
+        description: "Papel administrativo superprivilegiado usado para movimentacao lateral."
+        mitigation: "RBAC com minimo privilegio, revisao periodica de acessos, contas break-glass monitoradas."
+
+  edge_ddos_protection:
+    threats:
+      - category: Denial of Service
+        description: "Ataque volumetrico (L3/L4) satura a infraestrutura caso a protecao seja mal configurada ou contornada."
+        mitigation: "Deteccao/mitigacao always-on, regras baseadas em taxa, capacidade de absorcao (headroom) upstream."
+
+  edge_cdn:
+    threats:
+      - category: Tampering
+        description: "Cache poisoning serve conteudo malicioso para os usuarios finais."
+        mitigation: "URLs/cookies assinados, politicas de cache-key estritas, validacao da origem."
+      - category: Information Disclosure
+        description: "Configuracao de cache incorreta expoe conteudo privado ou headers sensiveis."
+        mitigation: "Revisao das cache behaviors, nunca cachear headers/cookies de autenticacao."
+
+  edge_waf:
+    threats:
+      - category: Tampering
+        description: "Bypass do WAF via encoding/ofuscacao permite que ataques de injecao passem."
+        mitigation: "Manter managed rule sets atualizados, virtual patching, modelo de seguranca positivo quando possivel."
+      - category: Denial of Service
+        description: "O proprio WAF vira gargalo ou alvo de ataque."
+        mitigation: "Rate limiting, autoscaling, monitorar taxa de falsos positivos."
+
+  edge_gateway:
+    threats:
+      - category: Spoofing
+        description: "API keys/tokens forjados ou roubados concedem acesso nao autorizado."
+        mitigation: "OAuth2/OIDC com tokens de vida curta, mTLS para comunicacao servico-a-servico."
+      - category: Elevation of Privilege
+        description: "Falta de checagem de autorizacao por rota permite escalonamento de privilegio."
+        mitigation: "Enforcement centralizado de politica de autorizacao, escopos por rota."
+
+  edge_portal:
+    threats:
+      - category: Information Disclosure
+        description: "Documentacao de API interna exposta publicamente revela superficie de ataque."
+        mitigation: "Autenticacao no portal, nao publicar endpoints internos."
+      - category: Spoofing
+        description: "Auto-cadastro falso usado para obter credenciais de API."
+        mitigation: "Cadastro verificado, workflow de aprovacao para escopos sensiveis."
+
+  external_entry_point:
+    threats:
+      - category: Spoofing
+        description: "Ponto de entrada publico sem autenticacao forte e usado para phishing/relay."
+        mitigation: "AuthN forte, validacao de terminacao TLS."
+      - category: Denial of Service
+        description: "Ponto de entrada sem protecao e inundado de requisicoes."
+        mitigation: "Rate limiting, WAF/DDoS protection na frente."
+
+  integration_orchestrator:
+    threats:
+      - category: Tampering
+        description: "Definicao do workflow alterada para mudar a logica de negocio ou exfiltrar dados."
+        mitigation: "Definicoes de workflow versionadas e assinadas, aprovacao de mudanca, RBAC no orquestrador."
+      - category: Elevation of Privilege
+        description: "Orquestrador guarda credenciais amplas para sistemas downstream, reutilizaveis em movimentacao lateral."
+        mitigation: "Managed identities com escopo por conexao, segredos referenciados de um vault, nunca embutidos."
+
+  integration_messaging:
+    threats:
+      - category: Tampering
+        description: "Payload da mensagem alterado em transito ou em repouso."
+        mitigation: "Assinatura de mensagem, TLS em transito, criptografia em repouso."
+      - category: Denial of Service
+        description: "Fila inundada ou poison messages esgotam os consumidores."
+        mitigation: "Dead-letter queue, autoscaling de consumidores, quota/throttle por produtor."
+
+  compute_load_balancer:
+    threats:
+      - category: Spoofing
+        description: "Respostas de health-check de backend forjadas redirecionam trafego."
+        mitigation: "mTLS entre LB e backends, rede privada dedicada."
+      - category: Denial of Service
+        description: "Load balancer sobrecarregado (esgotamento de conexoes)."
+        mitigation: "Autoscaling do target group, limites de conexao, protecao DDoS upstream."
+
+  compute_service:
+    threats:
+      - category: Spoofing
+        description: "Servico se passa por outro sem mTLS entre servicos internos."
+        mitigation: "Service mesh/mTLS, identidade de workload."
+      - category: Tampering
+        description: "Entrada nao validada permite injecao ou execucao remota de codigo."
+        mitigation: "Validacao de input, scanning de dependencias, WAF na frente."
+      - category: Repudiation
+        description: "Acoes do servico nao ficam registradas, impossibilitando atribuicao."
+        mitigation: "Log de auditoria estruturado correlacionado com request id."
+      - category: Information Disclosure
+        description: "Mensagens de erro verbosas/stack traces vazam detalhes internos."
+        mitigation: "Respostas de erro genericas, segredos nunca logados."
+      - category: Denial of Service
+        description: "Consumo de recursos sem limite (loop, payload grande, N+1)."
+        mitigation: "Rate limiting, circuit breakers, autoscaling."
+      - category: Elevation of Privilege
+        description: "Servico roda com role/permissao IAM excessiva."
+        mitigation: "IAM roles de minimo privilegio por servico."
+
+  compute_worker:
+    threats:
+      - category: Tampering
+        description: "Job/payload malicioso ou envenenado e executado com confianca elevada."
+        mitigation: "Validar e sanitizar payloads de job, execucao em sandbox."
+      - category: Denial of Service
+        description: "Backlog de fila por submissao de jobs sem limite."
+        mitigation: "Alarmes de profundidade de fila, autoscaling de workers, quota por tenant."
+
+  data_database:
+    threats:
+      - category: Tampering
+        description: "Escrita nao autorizada ou SQL injection altera registros."
+        mitigation: "Queries parametrizadas, roles de banco com minimo privilegio, WAF."
+      - category: Information Disclosure
+        description: "Dado nao criptografado ou acesso de leitura amplo expoe dados sensiveis."
+        mitigation: "Criptografia em repouso, controle de acesso por coluna, isolamento de rede (subnet privada)."
+      - category: Denial of Service
+        description: "Queries custosas ou esgotamento de conexoes."
+        mitigation: "Timeout de query, limite de connection pool, read replicas."
+
+  data_cache:
+    threats:
+      - category: Information Disclosure
+        description: "Dado sensivel em cache acessivel sem autenticacao (ex.: Redis exposto)."
+        mitigation: "AUTH/ACLs no cache, isolamento de rede, evitar cachear PII/segredos."
+      - category: Tampering
+        description: "Cache poisoning injeta dado malicioso servido aos clientes."
+        mitigation: "Validar antes de cachear, TTL curto para chaves sensiveis."
+
+  data_storage:
+    threats:
+      - category: Information Disclosure
+        description: "Bucket/container publico legivel expoe arquivos."
+        mitigation: "Buckets privados por padrao, revisao de bucket policy, block public access."
+      - category: Tampering
+        description: "Sobrescrita ou exclusao nao autorizada de objetos armazenados."
+        mitigation: "Versionamento, object lock/WORM, politicas de escrita com minimo privilegio."
+
+  security_identity_provider:
+    threats:
+      - category: Spoofing
+        description: "Este e o ponto de controle central de Spoofing: comprometimento = impersonacao total."
+        mitigation: "MFA, conditional access, deteccao de anomalia de login."
+      - category: Elevation of Privilege
+        description: "Adulteracao de token/claims ou escopos excessivamente amplos."
+        mitigation: "JWTs assinados e validados, tempo de vida curto, minimizacao de escopo."
+
+  security_key_management:
+    threats:
+      - category: Information Disclosure
+        description: "Exposicao de chave/segredo permite decifrar todos os dados protegidos por ela."
+        mitigation: "Chaves em HSM, politicas de acesso estritas por chave, rotacao periodica."
+      - category: Elevation of Privilege
+        description: "Acesso amplo demais ao key vault permite decifrar/assinar dados arbitrarios."
+        mitigation: "Politica de acesso por chave, auditoria de todo uso de chave."
+
+  obs_monitoring:
+    threats:
+      - category: Tampering
+        description: "Alertas/metricas desativados ou alterados para esconder um ataque em andamento."
+        mitigation: "RBAC e change tracking na configuracao de monitoramento, alerta sobre mudancas na propria config."
+      - category: Information Disclosure
+        description: "Dashboards/metricas expoem dado operacional sensivel a quem nao deveria ver."
+        mitigation: "Controle de acesso nos dashboards, redigir labels sensiveis."
+
+  obs_audit:
+    threats:
+      - category: Repudiation
+        description: "Este e o controle primario de Repudiation: log alterado/apagado remove evidencia."
+        mitigation: "Armazenamento de log imutavel/write-once, replicacao para conta/regiao separada, verificacao de integridade."
+      - category: Tampering
+        description: "Injecao ou exclusao de log por principal comprometido."
+        mitigation: "Minimo privilegio para exclusao de log, validacao de integridade (hash encadeado)."
+
+  external_backend_service:
+    threats:
+      - category: Spoofing
+        description: "Chamada tratada como 'interna' e forjada de fora por suposicao de confianca de rede fraca."
+        mitigation: "Autenticacao mutua mesmo para backends 'internos', rede zero-trust."
+      - category: Information Disclosure
+        description: "Dado enviado a backend legado sem controle de criptografia/logging."
+        mitigation: "TLS em toda comunicacao, classificar o dado antes de enviar."
+
+  external_saas_service:
+    threats:
+      - category: Information Disclosure
+        description: "Dado sensivel compartilhado com terceiro alem do necessario."
+        mitigation: "Minimizacao de dados, revisao de risco de fornecedor/DPA, redacao a nivel de campo."
+      - category: Spoofing
+        description: "Callbacks de webhook do SaaS forjados por atacante."
+        mitigation: "Verificar assinatura do webhook, allowlist de IP."
+
+  external_web_service:
+    threats:
+      - category: Tampering
+        description: "Tampering de request/response em transito (especialmente SOAP legado sem WS-Security)."
+        mitigation: "TLS obrigatorio, assinatura de mensagem (WS-Security) ou mTLS."
+      - category: Denial of Service
+        description: "Dependencia de servico externo lento/indisponivel gera falha em cascata."
+        mitigation: "Timeouts, circuit breakers, bulkheads."
+
+  communication_service:
+    threats:
+      - category: Spoofing
+        description: "Spoofing de remetente/dominio em notificacoes de saida (risco de phishing)."
+        mitigation: "SPF/DKIM/DMARC, dominios de envio dedicados."
+      - category: Information Disclosure
+        description: "Payload da notificacao contem dado sensivel entregue por canal inseguro (SMS/email)."
+        mitigation: "Nunca enviar segredos/PII em texto claro na notificacao, usar link seguro em vez disso."
+
+  backup_service:
+    threats:
+      - category: Information Disclosure
+        description: "Backup contem o dataset sensivel completo com controle de acesso mais fraco que a producao."
+        mitigation: "Criptografar backups, mesma politica (ou mais estrita) de acesso da origem, conta de backup isolada."
+      - category: Tampering
+        description: "Backup alterado/apagado por ransomware ou insider malicioso, impedindo recuperacao."
+        mitigation: "Backups imutaveis/WORM, copia offline ou em conta separada, teste periodico de restore."
+
+  # Boundaries: nao sao alvo direto de ameaca, mas definem o dominio de
+  # confianca usado pela boundary_crossing_rule abaixo (o que importa e o
+  # que cruza a fronteira, nao a fronteira em si).
+  boundary_cloud:
+    threats: []
+  boundary_region:
+    threats: []
+  boundary_resource_group:
+    threats: []
+  boundary_vpc_or_vnet:
+    threats: []
+  boundary_subnet_public:
+    threats: []
+  boundary_subnet_private:
+    threats: []
+  boundary_autoscaling_group:
+    threats: []
+
+boundary_crossing_rule:
+  threats:
+    - category: Spoofing
+      description: "Fluxo cruza uma fronteira de confianca sem garantia de que a identidade da origem foi validada do lado de dentro."
+      mitigation: "Autenticar mutuamente (mTLS) ou validar token/identidade a cada travessia de fronteira, nao confiar apenas na rede."
+    - category: Tampering
+      description: "Dado em transito pode ser alterado ao atravessar a fronteira (rede publica, outra VPC, subnet publica->privada)."
+      mitigation: "TLS obrigatorio na travessia, validacao de integridade (assinatura/HMAC) para dado sensivel."
+    - category: Information Disclosure
+      description: "Dado exposto a um dominio de confianca menor ao cruzar a fronteira."
+      mitigation: "Classificar o dado antes de atravessar, criptografar em transito, minimizar payload ao estritamente necessario."
+    - category: Denial of Service
+      description: "Fronteira publica (ex.: subnet publica, edge da cloud) e o ponto mais provavel de ataque volumetrico."
+      mitigation: "Rate limiting/DDoS protection especificamente nos pontos de entrada da fronteira."
