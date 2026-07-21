@@ -6,4 +6,37 @@ weights/
 logs/
 reports/*.jpg
 reports/*.png
+# Segredos
+.env
+.env.local
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# uv / venv
+.venv/
+venv/
+env/
+
+# Cache / build
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.streamlit/secrets.toml
+build/
+dist/
+*.egg-info/
+
+# Uploads temporarios
+uploads/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store

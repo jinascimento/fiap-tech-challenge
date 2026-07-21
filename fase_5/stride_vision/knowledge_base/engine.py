@@ -60,9 +60,12 @@ def generate_threats(graph: nx.DiGraph, rules: dict) -> list[Threat]:
                     Threat(
                         scope="flow",
                         target_id=v,
-                        target_label=f"{src_label} (#{u}) -> {dst_label} (#{v})",
+                        target_label=dst_label,
                         category=t["category"],
-                        description=f"{t['description']} [cruza: {', '.join(crosses)}]",
+                        description=(
+                            f"[Fluxo {src_label} (#{u}) -> {dst_label} (#{v})] "
+                            f"{t['description']} (cruza: {', '.join(crosses)})"
+                        ),
                         mitigation=t["mitigation"],
                     )
                 )

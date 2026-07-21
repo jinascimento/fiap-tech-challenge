@@ -9,7 +9,16 @@ dependencies = [
     "pyyaml",
     "pillow",
     "numpy",
+    "pydantic>=2.13.4",
+    "pydantic-ai-slim[google,anthropic]>=2.10.0",
+    "python-dotenv>=1.2.2",
+    "streamlit>=1.59.2",
 ]
 
 [tool.uv]
 package = false
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.15.21",
+]

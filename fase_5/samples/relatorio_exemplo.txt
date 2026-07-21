@@ -1,0 +1,82 @@
+##Relatorio de Modelagem de Ameacas (STRIDE) - Aplicacao Web Multi-Camadas em Nuvem
+Componentes identificados (15)
+#0 data_cache - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#1 identity_provider - boundaries: boundary_cloud, boundary_region
+#2 api_gateway - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_public_subnet
+#3 edge_ddos_protection - boundaries: boundary_cloud, boundary_edge
+#4 web_application_firewall - boundaries: boundary_cloud, boundary_region, boundary_public_subnet
+#5 static_content_cdn - boundaries: boundary_cloud, boundary_edge
+#6 auth_service - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#7 user_database - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#8 orders_database - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#9 message_queue - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#10 secrets_manager - boundaries: boundary_cloud, boundary_region
+#11 audit_log_storage - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#12 payment_service - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+#13 compute_load_balancer - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_public_subnet
+#14 backend_api - boundaries: boundary_cloud, boundary_region, boundary_vpc_or_vnet, boundary_private_subnet
+
+##Ameacas STRIDE identificadas (26)
+Spoofing (4)
+identity_provider (component#1): Atacante utiliza credenciais vazadas para se passar por um usuario legitimo, aproveitando ausencia de MFA.
+Contramedida: Exigir MFA para todos os usuarios, monitorar logins de localidades incomuns e aplicar bloqueio adaptativo por risco.
+auth_service (component#6): Falsificacao de token JWT por chave de assinatura fraca ou vazada permitiria impersonar qualquer usuario.
+Contramedida: Rotacionar chaves de assinatura periodicamente, usar algoritmos assimetricos (RS256/ES256) e armazenar chaves em HSM/KMS.
+api_gateway (component#2): Requisicao forjada com header de identidade que o gateway confia sem validar assinatura do IdP.
+Contramedida: Validar assinatura do token em todas as rotas, nao confiar em headers de identidade sem verificacao criptografica.
+backend_api (component#14): Servico interno aceita chamadas leste-oeste sem autenticar a origem, permitindo spoofing de outro microservico.
+Contramedida: Adotar mTLS entre servicos internos ou tokens de servico de curta duracao emitidos por SPIFFE/OIDC.
+
+Tampering (4)
+orders_database (component#8): Alteracao nao autorizada de registros de pedidos por conta com permissao excessiva.
+Contramedida: Aplicar least privilege via IAM, habilitar auditoria de escrita e usar snapshots imutaveis para restauracao.
+message_queue (component#9): Mensagens em transito podem ser modificadas caso a fila aceite conexoes nao TLS.
+Contramedida: Forcar TLS em produtores e consumidores, assinar payloads criticos e validar assinatura no consumo.
+static_content_cdn (component#5): Origem do CDN comprometida distribui JavaScript malicioso para todos os usuarios.
+Contramedida: Assinar deploys da origem, habilitar Subresource Integrity (SRI) e monitorar hashes servidos pelo edge.
+backend_api (component#14): Manipulacao de parametros na requisicao permite modificar campos que deveriam ser somente-leitura (mass assignment).
+Contramedida: Usar DTOs explicitos, allowlists de campos editaveis e validacao server-side com Pydantic ou similar.
+
+Repudiation (3)
+audit_log_storage (component#11): Logs de auditoria podem ser apagados por um administrador comprometido, dificultando forense.
+Contramedida: Habilitar retencao imutavel (WORM/Object Lock), replicar logs para conta segregada e alertar em falhas de entrega.
+payment_service (component#12): Transacoes financeiras sem trilha assinada permitem que uma das partes negue a operacao.
+Contramedida: Registrar cada transacao com hash encadeado e carimbo de tempo confiavel, exportar para armazenamento imutavel.
+auth_service (component#6): Ausencia de log estruturado de login/logout dificulta rastrear quem executou uma acao.
+Contramedida: Padronizar eventos de autenticacao com correlation-id, exportar para SIEM e reter por prazo regulatorio.
+
+Information Disclosure (5)
+user_database (component#7): Dados pessoais expostos por backups nao criptografados em bucket com acl publica.
+Contramedida: Criptografar backups em repouso com KMS, negar acesso publico em nivel de conta e revisar politicas de bucket.
+secrets_manager (component#10): Segredos vazam via variavel de ambiente logada acidentalmente em modo debug.
+Contramedida: Redigir variaveis sensiveis nos logs por padrao, injetar segredos via arquivo montado e proibir debug em producao.
+api_gateway (component#2): Mensagens de erro detalhadas revelam versoes de framework e stack trace ao chamador externo.
+Contramedida: Mapear erros para respostas genericas voltadas ao cliente, manter detalhes apenas em logs internos.
+data_cache (component#0): Cache compartilhado entre tenants pode retornar dados de outro cliente por chave mal construida.
+Contramedida: Prefixar toda chave de cache com identificador do tenant e validar isolamento em testes automatizados.
+static_content_cdn (component#5): Cache de resposta autenticada no CDN entrega dados de um usuario para outro.
+Contramedida: Marcar respostas autenticadas com Cache-Control private e nunca variar apenas por URL para conteudo por-usuario.
+
+Denial of Service (6)
+edge_ddos_protection (component#3): Ataque volumetrico (L3/L4) satura a infraestrutura caso a protecao seja mal configurada ou contornada.
+Contramedida: Deteccao/mitigacao always-on, regras baseadas em taxa, capacidade de absorcao (headroom) upstream.
+compute_load_balancer (component#13): Load balancer sobrecarregado (esgotamento de conexoes) durante pico de trafego legitimo ou ataque L7.
+Contramedida: Configurar autoscaling, limites de conexao por origem e proteger com WAF a montante.
+web_application_firewall (component#4): Regras muito permissivas ou desatualizadas nao bloqueiam ataques L7 sofisticados.
+Contramedida: Atualizar regras gerenciadas, criar regras customizadas por endpoint e testar com trafego sintetico.
+backend_api (component#14): Endpoints custosos sem rate limit permitem exaurir CPU/DB com poucas requisicoes.
+Contramedida: Aplicar rate limit por usuario e IP, paginar respostas grandes e definir timeouts agressivos.
+orders_database (component#8): Consultas nao otimizadas em endpoints publicos derrubam o banco por lock contention.
+Contramedida: Revisar query plans, adicionar indices apropriados e mover consultas pesadas para replicas de leitura.
+message_queue (component#9): Producao descontrolada satura a fila e provoca perda de mensagens ou latencia inaceitavel.
+Contramedida: Configurar backpressure no produtor, DLQ para mensagens problematicas e alertar em profundidade anormal.
+
+Elevation of Privilege (4)
+auth_service (component#6): Usuario comum consegue chamar rota administrativa devido a falha de verificacao de escopo.
+Contramedida: Centralizar autorizacao por politica (OPA/Cedar), testar rotas administrativas com usuarios sem privilegio.
+api_gateway (component#2): Rota interna exposta indevidamente permite chamar operacoes privilegiadas sem passar pelo IdP.
+Contramedida: Segregar API interna em VPC privada, aplicar allowlist de rotas publicas e revisar em cada deploy.
+backend_api (component#14): Injecao de SQL em campo nao sanitizado escalona para leitura completa do banco.
+Contramedida: Usar prepared statements/ORM, validar entrada com Pydantic e aplicar principio do menor privilegio ao role de DB.
+secrets_manager (component#10): Politica IAM excessivamente ampla permite que qualquer servico leia segredos de outros times.
+Contramedida: Aplicar politicas por segredo com tag-based access, revisar periodicamente e habilitar auditoria de leitura.
